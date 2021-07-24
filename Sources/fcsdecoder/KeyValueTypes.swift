@@ -8,8 +8,8 @@
 import Foundation
 
 public struct Amplification: Decodable {
-    var param1: Float
-    var param2: Float
+    public var param1: Float
+    public var param2: Float
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
