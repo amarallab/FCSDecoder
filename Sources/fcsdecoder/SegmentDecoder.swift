@@ -26,7 +26,7 @@ extension Array: CollectionProtocol where Element : Parametrized {
 internal struct KeyValueReader {
     var data: [String: String] = [:]
     var nextName: String? = nil
-    var isBalanced: Bool { nextName == nil }
+    var isBalanced: Bool { nextName?.count ?? 0 == 0 }
 
     mutating func addChunk(data: Data, from startIndex: Data.Index, to endIndex: Data.Index, indicesToDelete: Set<Int>) throws {
         var chunk = data[startIndex..<endIndex]

@@ -124,20 +124,16 @@ public struct FlowCytometry {
         }
         
         guard
-            indexValues.count >= 6
+            indexValues.count >= 4
         else {
             throw ReadingError.invalidFormat
         }
         
         let textEndIndex = indexValues[1]
-        let dataStartIndex = indexValues[2]
-        let dataEndIndex = indexValues[3]
-        
+
         guard
             textStartIndex <= textEndIndex,
-            dataStartIndex <= dataEndIndex,
-            data.count >= textEndIndex,
-            data.count >= dataEndIndex
+            data.count >= textEndIndex
         else {
             throw ReadingError.invalidFormat
         }
@@ -146,6 +142,30 @@ public struct FlowCytometry {
         
         let decoder = SegmentDecoder()
         self.text = try decoder.decode(TextSegment.self, from: data[textStartIndex...textEndIndex])
+
+        
+        let dataStartIndex = indexValues[2] != 0 ? indexValues[2] : self.text.beginData
+        var dataEndIndex = indexValues[3] != 0 ? indexValues[3] : self.text.endData
+        
+        // Check Data effective size
+        let bitLengths = self.text.channels.map { $0.b }
+        let eventCount = bitLengths.reduce(0, +) / 8
+        let dataEffCount = self.text.tot * eventCount
+        
+        let effDataEndIndex = dataStartIndex + dataEffCount - 1
+        if dataEndIndex > effDataEndIndex + 1 { // Allow one byte difference
+            throw ReadingError.invalidFormat
+        }
+        if dataEndIndex > effDataEndIndex {
+            dataEndIndex = effDataEndIndex
+        }
+        
+        guard
+            dataStartIndex <= dataEndIndex,
+            data.count >= dataEndIndex
+        else {
+            throw ReadingError.invalidFormat
+        }
 
         // Data segment
         let channelsData: FlowData
@@ -167,10 +187,38 @@ public struct FlowCytometry {
                 $0.bindMemory(to: Double.self)
             }.map { $0 })
         case (.int, let byteOrder):
-            let bitLengths = self.text.channels.map { $0.b }
             let onlyBytes = self.text.channels.map { $0.b.isMultiple(of: 8) }.reduce(true) { $0 && $1 }
-            var bitBuffer: BitBuffer = createBitBuffer(data[dataStartIndex...dataEndIndex], byteOrder: byteOrder, onlyBytes: onlyBytes)
-            channelsData = .int(Self.transformToInt(bitBuffer: &bitBuffer, bitLengths: bitLengths))
+            let diffBitLengths = Set(bitLengths)
+            if diffBitLengths.count != 1 {
+                var bitBuffer: BitBuffer = createBitBuffer(data[dataStartIndex...dataEndIndex], byteOrder: byteOrder, onlyBytes: onlyBytes)
+                channelsData = .int(Self.transformToInt(bitBuffer: &bitBuffer, bitLengths: bitLengths))
+            } else {
+                switch (diffBitLengths.first!, byteOrder) {
+                case (8, _):
+                    channelsData = .int(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
+                        $0.bindMemory(to: UInt8.self)
+                    }.map { UInt32($0) })
+                case (16, .bigEndian):
+                    channelsData = .int(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
+                        $0.bindMemory(to: UInt16.self).map { $0.bigEndian }
+                    }.map { UInt32($0) })
+                case (16, .littleEndian):
+                    channelsData = .int(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
+                        $0.bindMemory(to: UInt16.self)
+                    }.map { UInt32($0) })
+                case (32, .bigEndian):
+                    channelsData = .int(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
+                        $0.bindMemory(to: UInt32.self).map { $0.bigEndian }
+                    })
+                case (32, .littleEndian):
+                    channelsData = .int(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
+                        $0.bindMemory(to: UInt32.self).map { $0 }
+                    })
+                default:
+                    var bitBuffer: BitBuffer = createBitBuffer(data[dataStartIndex...dataEndIndex], byteOrder: byteOrder, onlyBytes: onlyBytes)
+                    channelsData = .int(Self.transformToInt(bitBuffer: &bitBuffer, bitLengths: bitLengths))
+                }
+            }
         default:
             throw ReadingError.invalidDataSegment
         }

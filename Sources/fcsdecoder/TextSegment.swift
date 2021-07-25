@@ -11,7 +11,7 @@ public struct Channel: Decodable {
     public var b: Int
     public var e: Amplification
     public var n: String
-    public var r: Int
+    public var r: Double // TODO: depends on the datatype
     
     public var calibration: String?
     public var d: SuggestedVisualization?
@@ -107,7 +107,7 @@ public struct TextSegment: Decodable {
     public var channels: [Channel]
     
     public var abrt: Int?
-    public var bTim: fcsdecoder.Time?
+    public var bTim: FCSDecoder.Time?
     public var cells: String?
     public var com: String?
     public var csMode: Int?
@@ -115,8 +115,8 @@ public struct TextSegment: Decodable {
     public var csvFlags: [Flag]?
     public var cyt: String?
     public var cytSN: String?
-    public var date: fcsdecoder.Date?
-    public var etim: fcsdecoder.Time?
+    public var date: FCSDecoder.Date?
+    public var etim: FCSDecoder.Time?
     public var exp: String?
     public var fil: String?
 
@@ -124,7 +124,7 @@ public struct TextSegment: Decodable {
     public var gating: String?
     
     public var inst: String?
-    public var lastModified: fcsdecoder.FullDate?
+    public var lastModified: FCSDecoder.FullDate?
     public var lastModifier: String?
     public var lost: Int?
     public var op: String?
