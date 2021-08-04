@@ -7,9 +7,18 @@
 
 import Combine
 import Foundation
+import MetalKit
 
 public struct FlowCytometry {
     public enum ReadingError: Error {
+        // Metal issues
+        case deviceNotFound
+        case bufferError
+        case sourceDataError
+        case functionError
+        case commandError
+
+        // File issues
         case invalidFormat
         case invalidVersion(String)
         case invalidParameter(String)
@@ -22,11 +31,10 @@ public struct FlowCytometry {
     }
 
     public enum FlowData {
-        case int([UInt32])
-        case float([Float])
-        case double([Double])
+        case int
+        case float
     }
-    
+
     public enum DataRange {
         case int(min: UInt32, max: UInt32)
         case float(min: Float, max: Float)
@@ -37,8 +45,18 @@ public struct FlowCytometry {
     public let text: TextSegment
     public let data: FlowData
     public let channelDataRanges: [DataRange]
-
+    public let dataBuffer: MTLBuffer
+    
     public init(from data: Data) throws {
+        // First, initialize Metal
+        guard
+            let device = MTLCreateSystemDefaultDevice()
+        else {
+            throw ReadingError.deviceNotFound
+        }
+
+        let library = try device.makeDefaultLibrary(bundle: .module)
+
         // 1. HEADER
         guard
             let versionString = String(bytes: data[0...5], encoding: .ascii)
@@ -143,7 +161,6 @@ public struct FlowCytometry {
         let decoder = SegmentDecoder()
         self.text = try decoder.decode(TextSegment.self, from: data[textStartIndex...textEndIndex])
 
-        
         let dataStartIndex = indexValues[2] != 0 ? indexValues[2] : self.text.beginData
         var dataEndIndex = indexValues[3] != 0 ? indexValues[3] : self.text.endData
         
@@ -168,100 +185,163 @@ public struct FlowCytometry {
         }
 
         // Data segment
-        let channelsData: FlowData
-        switch (text.dataType, text.byteOrd) {
-        case (.float, .bigEndian):
-            channelsData = .float(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
-                $0.bindMemory(to: Float32.self).map { Float32(bitPattern: $0.bitPattern.bigEndian) }
-            })
-        case (.float, .littleEndian):
-            channelsData = .float(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
-                $0.bindMemory(to: Float.self)
-            }.map { $0 })
-        case (.double, .bigEndian):
-            channelsData = .double(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
-                $0.bindMemory(to: Double.self).map { Double(bitPattern: $0.bitPattern.bigEndian) }
-            })
-        case (.double, .littleEndian):
-            channelsData = .double(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
-                $0.bindMemory(to: Double.self)
-            }.map { $0 })
-        case (.int, let byteOrder):
-            let onlyBytes = self.text.channels.map { $0.b.isMultiple(of: 8) }.reduce(true) { $0 && $1 }
-            let diffBitLengths = Set(bitLengths)
-            if diffBitLengths.count != 1 {
-                var bitBuffer: BitBuffer = createBitBuffer(data[dataStartIndex...dataEndIndex], byteOrder: byteOrder, onlyBytes: onlyBytes)
-                channelsData = .int(Self.transformToInt(bitBuffer: &bitBuffer, bitLengths: bitLengths))
-            } else {
-                switch (diffBitLengths.first!, byteOrder) {
-                case (8, _):
-                    channelsData = .int(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
-                        $0.bindMemory(to: UInt8.self)
-                    }.map { UInt32($0) })
-                case (16, .bigEndian):
-                    channelsData = .int(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
-                        $0.bindMemory(to: UInt16.self).map { $0.bigEndian }
-                    }.map { UInt32($0) })
-                case (16, .littleEndian):
-                    channelsData = .int(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
-                        $0.bindMemory(to: UInt16.self)
-                    }.map { UInt32($0) })
-                case (32, .bigEndian):
-                    channelsData = .int(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
-                        $0.bindMemory(to: UInt32.self).map { $0.bigEndian }
-                    })
-                case (32, .littleEndian):
-                    channelsData = .int(data[dataStartIndex...dataEndIndex].withUnsafeBytes {
-                        $0.bindMemory(to: UInt32.self).map { $0 }
-                    })
-                default:
-                    var bitBuffer: BitBuffer = createBitBuffer(data[dataStartIndex...dataEndIndex], byteOrder: byteOrder, onlyBytes: onlyBytes)
-                    channelsData = .int(Self.transformToInt(bitBuffer: &bitBuffer, bitLengths: bitLengths))
+        switch text.dataType {
+        case .float:
+            let buffer: [Float32]
+            switch text.byteOrd {
+            case .bigEndian:
+                buffer = data[dataStartIndex...dataEndIndex].withUnsafeBytes {
+                    $0.bindMemory(to: Float32.self).map {
+                        Float32(bitPattern: $0.bitPattern.bigEndian)
+                    }
                 }
+            case .littleEndian:
+                buffer = data[dataStartIndex...dataEndIndex].withUnsafeBytes {
+                    $0.bindMemory(to: Float32.self)
+                }.map { $0 }
             }
+            guard
+                let dataBuffer = device.makeBuffer(bytes: buffer, length: MemoryLayout<Float32>.size * dataEffCount)
+            else {
+                throw ReadingError.invalidDataSegment
+            }
+            self.data = .float
+            self.dataBuffer = dataBuffer
+            
+        case .double:
+            let buffer: [Float32]
+            switch text.byteOrd {
+            case .bigEndian:
+                buffer = data[dataStartIndex...dataEndIndex].withUnsafeBytes {
+                    $0.bindMemory(to: Double.self).map { Double(bitPattern: $0.bitPattern.bigEndian) }
+                }.map { Float32($0) }
+            case .littleEndian:
+                buffer = data[dataStartIndex...dataEndIndex].withUnsafeBytes {
+                    $0.bindMemory(to: Double.self)
+                }.map { Float32($0) }
+            }
+            guard
+                let dataBuffer = device.makeBuffer(bytes: buffer, length: MemoryLayout<Float32>.size * dataEffCount)
+            else {
+                throw ReadingError.invalidDataSegment
+            }
+            self.data = .float
+            self.dataBuffer = dataBuffer
+
+        case .int:
+            let convertByteOrd: Self.ByteOrd
+            switch text.byteOrd {
+            case .littleEndian:
+                convertByteOrd = .int16LittleEndian
+            case .bigEndian:
+                convertByteOrd = .int16BigEndian
+            }
+            self.data = .int
+            self.dataBuffer = try Self.convert(
+                device: device,
+                library: library,
+                data: data[dataStartIndex...dataEndIndex],
+                bitLengths: bitLengths,
+                byteOrd: convertByteOrd,
+                channelCount: self.text.channels.count,
+                eventCount: self.text.tot)
         default:
             throw ReadingError.invalidDataSegment
         }
-        
-        switch channelsData {
-        case .int(let data):
-            channelDataRanges = Self.calculateChannelsDataRange(data, channelCount: text.channels.count, buildDataRange: DataRange.int)
-        case .float(let data):
-            channelDataRanges = Self.calculateChannelsDataRange(data, channelCount: text.channels.count, buildDataRange: DataRange.float)
-        case .double(let data):
-            channelDataRanges = Self.calculateChannelsDataRange(data, channelCount: text.channels.count, buildDataRange: DataRange.double)
-        }
-        self.data = channelsData
+        self.channelDataRanges = try Self.findMinMax(
+            device: device,
+            library: library,
+            buffer: self.dataBuffer,
+            dataType: self.text.dataType,
+            channelCount: self.text.channels.count,
+            eventcount: self.text.tot)
     }
     
-    private static func calculateChannelsDataRange<T: Comparable>(_ data: [T], channelCount: Int, buildDataRange: (T, T) -> DataRange) -> [DataRange] {
-        var concurrentMinValues: [T] = Array(data[0..<channelCount])
-        var concurrentMaxValues: [T] = Array(data[0..<channelCount])
-        let group = DispatchGroup()
-        for channel in 0..<channelCount {
-            group.enter()
-            DispatchQueue.global(qos: .userInitiated).async {
-                var minValue = data[channel]
-                var maxValue = data[channel]
-                for i in stride(from: channel, to: data.count, by: channelCount) {
-                    minValue = min(minValue, data[i])
-                    maxValue = max(maxValue, data[i])
-                }
-                concurrentMinValues[channel] = minValue
-                concurrentMaxValues[channel] = maxValue
-                group.leave()
-            }
-        }
-        group.wait()
-        
-        return zip(concurrentMinValues, concurrentMaxValues).map(buildDataRange)
+    
+    enum ByteOrd: Int32 {
+        case int16BigEndian = 0
+        case int16LittleEndian = 1
+        case int32BigEndian = 2
+        case int32LittleEndian = 3
     }
     
-    private static func transformToInt(bitBuffer: inout BitBuffer, bitLengths: [Int]) -> [UInt32] {
-        var data: [UInt32] = []
-        while !bitBuffer.isEmpty {
-            data.append(contentsOf: bitLengths.map { bitBuffer.next($0) })
+    /// Convert bit length based Data to UInt32 data
+    static func convert(device: MTLDevice, library: MTLLibrary, data: Data, bitLengths: [Int], byteOrd: ByteOrd, channelCount: Int, eventCount: Int) throws -> MTLBuffer {
+
+        struct Uniforms {
+            var channelCount: Int32
+            var eventCount: Int32
+            var stride: Int32
+            var byteOrd: ByteOrd
         }
-        return data
+
+        let destinationCount = channelCount * eventCount
+        let sourceData = [UInt8](data)
+
+        guard
+            let converterFunction = library.makeFunction(name: "converter")
+        else {
+            throw ReadingError.functionError
+        }
+
+        guard
+            let sourceBuffer = device.makeBuffer(bytes: sourceData, length: data.count, options: .storageModeShared),
+            let destinationBuffer = device.makeBuffer(length: destinationCount * MemoryLayout<UInt32>.size, options: .storageModeShared)
+        else {
+            throw ReadingError.bufferError
+        }
+        
+        let bitLengthsData = bitLengths.map(UInt8.init)
+        let stride = bitLengths.reduce(0, +)
+        guard
+            stride.isMultiple(of: 8)
+        else {
+            throw ReadingError.sourceDataError
+        }
+        
+        let uniforms = Uniforms(
+            channelCount: Int32(channelCount),
+            eventCount: Int32(eventCount),
+            stride: Int32(stride),
+            byteOrd: .int16LittleEndian)
+
+        let uniformsLength = MemoryLayout<Uniforms>.size
+        let pipelineState = try device.makeComputePipelineState(function: converterFunction)
+
+        guard
+            let commandQueue = device.makeCommandQueue(),
+            let commandBuffer = commandQueue.makeCommandBuffer(),
+            let commandEncoder = commandBuffer.makeComputeCommandEncoder(),
+            let uniformsBuffer = device.makeBuffer(bytes: [uniforms], length: uniformsLength),
+            let bitLengthsBuffer = device.makeBuffer(bytes: bitLengthsData, length: bitLengthsData.count, options: .storageModeShared)
+        else {
+            throw ReadingError.commandError
+        }
+        
+        commandEncoder.setComputePipelineState(pipelineState)
+        commandEncoder.setBuffer(uniformsBuffer, offset: 0, index: 0)
+        commandEncoder.setBuffer(bitLengthsBuffer, offset: 0, index: 1)
+        commandEncoder.setBuffer(sourceBuffer, offset: 0, index: 2)
+        commandEncoder.setBuffer(destinationBuffer, offset: 0, index: 3)
+        let gridSize = MTLSize(width: channelCount, height: eventCount, depth: 1)
+        commandEncoder.dispatchThreads(gridSize, threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+
+        commandEncoder.endEncoding()
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+
+        return destinationBuffer
     }
+    
+    /// Find min/max values for all channels in a Dataset
+    static func findMinMax(device: MTLDevice, library: MTLLibrary, buffer: MTLBuffer, dataType: DataType, channelCount: Int, eventcount: Int) throws -> [DataRange] {
+        
+        struct Uniforms {
+            var channelCount: Int32
+            var eventCount: Int32
+        }
+        
+        fatalError()
+    }
+    
 }
