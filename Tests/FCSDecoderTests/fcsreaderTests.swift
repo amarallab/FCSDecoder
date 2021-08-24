@@ -13,6 +13,17 @@ final class FCSDecoderTests: XCTestCase {
         print("Channel 0: \(fcs.channelDataRanges[0]), \(fcs.text.channels[0].r)")
     }
     
+    func testNUFileDecoder() throws {
+        let beginData = Date()
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "20210215_1478-BAL-00_001", withExtension: "fcs"))
+        let data = try Data(contentsOf: url)
+        let fcs = try FlowCytometry(from: data)
+        let elapsedTime = Date().timeIntervalSince(beginData)
+        print("Read in \(elapsedTime) seconds")
+        print("Channels: \(fcs.text.channels.count)")
+        print("Channel 0: \(fcs.channelDataRanges[0]), \(fcs.text.channels[0].r)")
+    }
+    
     func testDecoderNoDataEndIndex() throws {
         let beginData = Date()
         let url = try XCTUnwrap(Bundle.module.url(forResource: "1 WT_001", withExtension: "fcs"))
