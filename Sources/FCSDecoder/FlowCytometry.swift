@@ -201,7 +201,7 @@ public struct FlowCytometry {
                 }.map { $0 }
             }
             guard
-                let dataBuffer = device.makeBuffer(bytes: buffer, length: MemoryLayout<Float32>.size * dataEffCount)
+                let dataBuffer = device.makeBuffer(bytes: buffer, length: MemoryLayout<Float32>.size * buffer.count)
             else {
                 throw ReadingError.invalidDataSegment
             }
@@ -221,7 +221,7 @@ public struct FlowCytometry {
                 }.map { Float32($0) }
             }
             guard
-                let dataBuffer = device.makeBuffer(bytes: buffer, length: MemoryLayout<Float32>.size * dataEffCount)
+                let dataBuffer = device.makeBuffer(bytes: buffer, length: MemoryLayout<Float32>.size * buffer.count)
             else {
                 throw ReadingError.invalidDataSegment
             }
@@ -254,7 +254,7 @@ public struct FlowCytometry {
             buffer: self.dataBuffer,
             dataType: self.text.dataType,
             channelCount: self.text.channels.count,
-            eventcount: self.text.tot)
+            eventCount: self.text.tot)
     }
     
     
@@ -267,7 +267,6 @@ public struct FlowCytometry {
     
     /// Convert bit length based Data to UInt32 data
     static func convert(device: MTLDevice, library: MTLLibrary, data: Data, bitLengths: [Int], byteOrd: ByteOrd, channelCount: Int, eventCount: Int) throws -> MTLBuffer {
-
         struct Uniforms {
             var channelCount: Int32
             var eventCount: Int32
@@ -334,14 +333,62 @@ public struct FlowCytometry {
     }
     
     /// Find min/max values for all channels in a Dataset
-    static func findMinMax(device: MTLDevice, library: MTLLibrary, buffer: MTLBuffer, dataType: DataType, channelCount: Int, eventcount: Int) throws -> [DataRange] {
-        
+    static func findMinMax(device: MTLDevice, library: MTLLibrary, buffer dataBuffer: MTLBuffer, dataType: DataType, channelCount: Int, eventCount: Int) throws -> [DataRange] {
         struct Uniforms {
+            var channelId: Int32
             var channelCount: Int32
             var eventCount: Int32
         }
+
+        struct FinalValues {
+            var min: Int32
+            var max: Int32
+        }
+
+        guard
+            let findMinMaxFunction = library.makeFunction(name: "find_min_max")
+        else {
+            throw ReadingError.functionError
+        }
+
+        let uniforms = Uniforms(channelId: 0, channelCount: Int32(channelCount), eventCount: Int32(eventCount))
+        let uniformsLengths = MemoryLayout<Uniforms>.size
+        let finalValuesLengths = MemoryLayout<FinalValues>.size * channelCount
+        let pipelineState = try device.makeComputePipelineState(function: findMinMaxFunction)
         
-        fatalError()
+        guard
+            let commandQueue = device.makeCommandQueue(),
+            let commandBuffer = commandQueue.makeCommandBuffer(),
+            let commandEncoder = commandBuffer.makeComputeCommandEncoder(),
+            let uniformsBuffer = device.makeBuffer(bytes: [uniforms], length: uniformsLengths),
+            let minsBuffer = device.makeBuffer(length: MemoryLayout<Int32>.size * eventCount, options: .storageModeShared),
+            let maxsBuffer = device.makeBuffer(length: MemoryLayout<Int32>.size * eventCount, options: .storageModeShared),
+            let finalValuesBuffer = device.makeBuffer(length: finalValuesLengths, options: .storageModeShared)
+        else {
+            throw ReadingError.commandError
+        }
+        
+        let currentChannel = 0
+//        for currentChannel in 0..<channelCount {
+            uniformsBuffer.contents().bindMemory(to: Uniforms.self, capacity: 1).pointee.channelId = Int32(currentChannel)
+
+            commandEncoder.setComputePipelineState(pipelineState)
+            commandEncoder.setBuffer(uniformsBuffer, offset: 0, index: 0)
+            commandEncoder.setBuffer(dataBuffer, offset: 0, index: 1)
+            commandEncoder.setBuffer(minsBuffer, offset: 0, index: 2)
+            commandEncoder.setBuffer(maxsBuffer, offset: 0, index: 3)
+            commandEncoder.setBuffer(finalValuesBuffer, offset: 0, index: 4)
+            let gridSize = MTLSize(width: eventCount, height: 1, depth: 1)
+            commandEncoder.dispatchThreads(gridSize, threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+//        }
+        
+        commandEncoder.endEncoding()
+        commandBuffer.commit()
+        commandBuffer.waitUntilScheduled()
+
+        let finalValuesPointer = finalValuesBuffer.contents().bindMemory(to: FinalValues.self, capacity: channelCount)
+        let result = UnsafeBufferPointer(start: finalValuesPointer, count: channelCount).map { DataRange.int(min: UInt32($0.min), max: UInt32($0.max)) }
+        return result
     }
     
 }
