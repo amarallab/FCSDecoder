@@ -27,9 +27,6 @@ final class FCSDecoderTests: XCTestCase {
         print("Channels: \(fcs.text.channels.count)")
         for (i, (valid, current)) in zip(finalValues, fcs.channelDataRanges).enumerated() {
             print("Channel \(i): \(valid) ==? \(current)")
-            if i > 4 {
-                break
-            }
         }
     }
     
