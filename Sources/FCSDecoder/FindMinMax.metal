@@ -79,9 +79,11 @@ kernel void find_min_max_copy_float(device find_min_max_uniforms_t &uniforms [[ 
                                     device float *maxs [[ buffer(3) ]],
                                     uint gid [[ thread_position_in_grid ]])
 {
-    auto value = data[uniforms.channel_count * gid + uniforms.channel_id];
-    mins[gid] = value;
-    maxs[gid] = value;
+    if (gid < uniforms.event_count) {
+        auto value = data[uniforms.channel_count * gid + uniforms.channel_id];
+        mins[gid] = value;
+        maxs[gid] = value;
+    }
 }
 
 kernel void find_min_max_step_float(device find_min_max_uniforms_t &uniforms [[ buffer(0) ]],
@@ -92,7 +94,7 @@ kernel void find_min_max_step_float(device find_min_max_uniforms_t &uniforms [[ 
     const uint step = uniforms.diff * 2;
     const uint near_index = gid * step;
     const uint far_index = gid * step + uniforms.diff;
-    if (far_index < uniforms.event_count) {
+    if (near_index < uniforms.event_count && far_index < uniforms.event_count) {
         mins[near_index] = min(mins[near_index], mins[far_index]);
         maxs[near_index] = max(maxs[near_index], maxs[far_index]);
     }
