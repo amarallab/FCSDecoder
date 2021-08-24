@@ -488,24 +488,29 @@ public struct FlowCytometry {
         let gridSingleSize = MTLSize(width: 1, height: 1, depth: 1)
         for _ in 0..<channelCount {
             commandEncoder.setComputePipelineState(pipelineInitChannelState)
-            commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
+            commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
+//            commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
         
             commandEncoder.setComputePipelineState(pipelineCopyState)
             let gridEventSizeSize = MTLSize(width: eventCount, height: 1, depth: 1)
-            commandEncoder.dispatchThreads(gridEventSizeSize, threadsPerThreadgroup: gridSingleSize)
+            commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridEventSizeSize)
+//            commandEncoder.dispatchThreads(gridEventSizeSize, threadsPerThreadgroup: gridSingleSize)
 
             let logValue = ceil(log2(Float(eventCount))) - 1
             var numberOfThreads = Int(powf(2, logValue))
             while numberOfThreads > 0 {
                 commandEncoder.setComputePipelineState(pipelineStepState)
                 let currentGridSize = MTLSize(width: numberOfThreads, height: 1, depth: 1)
-                commandEncoder.dispatchThreads(currentGridSize, threadsPerThreadgroup: gridSingleSize)
+                commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: currentGridSize)
+//                commandEncoder.dispatchThreads(currentGridSize, threadsPerThreadgroup: gridSingleSize)
                 commandEncoder.setComputePipelineState(pipelineAfterStepState)
-                commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
+                commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
+//                commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
                 numberOfThreads /= 2
             }
             commandEncoder.setComputePipelineState(pipelineFinalState)
-            commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
+            commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
+//            commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
         }
         commandEncoder.endEncoding()
         commandBuffer.commit()
