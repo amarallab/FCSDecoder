@@ -9,6 +9,22 @@ import Combine
 import Foundation
 import MetalKit
 
+extension MTLComputeCommandEncoder {
+    func dispatch(numberOfThreads: Int, pipelineState: MTLComputePipelineState) {
+        let threadsPerThreadgroup: MTLSize
+        let threadgroups: MTLSize
+            
+        if numberOfThreads < pipelineState.maxTotalThreadsPerThreadgroup {
+            threadgroups = MTLSize(width: 1, height: 1, depth: 1)
+            threadsPerThreadgroup = MTLSize(width: numberOfThreads, height: 1, depth: 1)
+        } else {
+            threadgroups = MTLSize(width: 1 + (numberOfThreads / pipelineState.maxTotalThreadsPerThreadgroup), height: 1, depth: 1)
+            threadsPerThreadgroup = MTLSize(width: pipelineState.maxTotalThreadsPerThreadgroup, height: 1, depth: 1)
+        }
+        self.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+    }
+}
+
 public struct FlowCytometry {
     public enum ReadingError: Error {
         // Metal issues
@@ -37,8 +53,8 @@ public struct FlowCytometry {
 
     public enum DataRange {
         case int(min: UInt32, max: UInt32)
-        case float(min: Float, max: Float)
-        case double(min: Double, max: Double)
+        case float(min: Float32, max: Float32)
+//        case double(min: Double, max: Double)  Maybe in the future
     }
 
     public let version: Version
@@ -219,11 +235,13 @@ public struct FlowCytometry {
             switch text.byteOrd {
             case .bigEndian:
                 buffer = data[dataStartIndex...dataEndIndex].withUnsafeBytes {
-                    $0.bindMemory(to: Double.self).map { Double(bitPattern: $0.bitPattern.bigEndian) }
+                    $0.bindMemory(to: Float64.self).map {
+                        Float64(bitPattern: $0.bitPattern.bigEndian)
+                    }
                 }.map { Float32($0) }
             case .littleEndian:
                 buffer = data[dataStartIndex...dataEndIndex].withUnsafeBytes {
-                    $0.bindMemory(to: Double.self)
+                    $0.bindMemory(to: Float64.self)
                 }.map { Float32($0) }
             }
             guard
@@ -271,7 +289,6 @@ public struct FlowCytometry {
             throw ReadingError.invalidDataSegment
         }
     }
-    
     
     enum ByteOrd: Int32 {
         case int16BigEndian = 0
@@ -397,32 +414,26 @@ public struct FlowCytometry {
         commandEncoder.setBuffer(maxsBuffer, offset: 0, index: 3)
         commandEncoder.setBuffer(minMaxValuesBuffer, offset: 0, index: 4)
 
-        let gridSingleSize = MTLSize(width: 1, height: 1, depth: 1)
         for _ in 0..<channelCount {
             commandEncoder.setComputePipelineState(pipelineInitChannelState)
-            commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
-//            commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
-        
+            commandEncoder.dispatch(numberOfThreads: 1, pipelineState: pipelineInitChannelState)
+
             commandEncoder.setComputePipelineState(pipelineCopyState)
-            let gridEventSizeSize = MTLSize(width: eventCount, height: 1, depth: 1)
-            commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridEventSizeSize)
-//            commandEncoder.dispatchThreads(gridEventSizeSize, threadsPerThreadgroup: gridSingleSize)
+            commandEncoder.dispatch(numberOfThreads: eventCount, pipelineState: pipelineCopyState)
 
             let logValue = ceil(log2(Float(eventCount))) - 1
             var numberOfThreads = Int(powf(2, logValue))
             while numberOfThreads > 0 {
                 commandEncoder.setComputePipelineState(pipelineStepState)
-                let currentGridSize = MTLSize(width: numberOfThreads, height: 1, depth: 1)
-                commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: currentGridSize)
-//                commandEncoder.dispatchThreads(currentGridSize, threadsPerThreadgroup: gridSingleSize)
+                commandEncoder.dispatch(numberOfThreads: numberOfThreads, pipelineState: pipelineStepState)
+                
                 commandEncoder.setComputePipelineState(pipelineAfterStepState)
-                commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
-//                commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
+                commandEncoder.dispatch(numberOfThreads: 1, pipelineState: pipelineAfterStepState)
+                
                 numberOfThreads /= 2
             }
             commandEncoder.setComputePipelineState(pipelineFinalState)
-            commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
-//            commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
+            commandEncoder.dispatch(numberOfThreads: 1, pipelineState: pipelineFinalState)
         }
         commandEncoder.endEncoding()
         commandBuffer.commit()
@@ -488,29 +499,24 @@ public struct FlowCytometry {
         let gridSingleSize = MTLSize(width: 1, height: 1, depth: 1)
         for _ in 0..<channelCount {
             commandEncoder.setComputePipelineState(pipelineInitChannelState)
-            commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
-//            commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
-        
+            commandEncoder.dispatch(numberOfThreads: 1, pipelineState: pipelineInitChannelState)
+
             commandEncoder.setComputePipelineState(pipelineCopyState)
-            let gridEventSizeSize = MTLSize(width: eventCount, height: 1, depth: 1)
-            commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridEventSizeSize)
-//            commandEncoder.dispatchThreads(gridEventSizeSize, threadsPerThreadgroup: gridSingleSize)
+            commandEncoder.dispatch(numberOfThreads: eventCount, pipelineState: pipelineCopyState)
 
             let logValue = ceil(log2(Float(eventCount))) - 1
             var numberOfThreads = Int(powf(2, logValue))
             while numberOfThreads > 0 {
                 commandEncoder.setComputePipelineState(pipelineStepState)
-                let currentGridSize = MTLSize(width: numberOfThreads, height: 1, depth: 1)
-                commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: currentGridSize)
-//                commandEncoder.dispatchThreads(currentGridSize, threadsPerThreadgroup: gridSingleSize)
+                commandEncoder.dispatch(numberOfThreads: numberOfThreads, pipelineState: pipelineStepState)
+
                 commandEncoder.setComputePipelineState(pipelineAfterStepState)
-                commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
-//                commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
+                commandEncoder.dispatch(numberOfThreads: 1, pipelineState: pipelineAfterStepState)
+
                 numberOfThreads /= 2
             }
             commandEncoder.setComputePipelineState(pipelineFinalState)
-            commandEncoder.dispatchThreadgroups(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
-//            commandEncoder.dispatchThreads(gridSingleSize, threadsPerThreadgroup: gridSingleSize)
+            commandEncoder.dispatch(numberOfThreads: 1, pipelineState: pipelineFinalState)
         }
         commandEncoder.endEncoding()
         commandBuffer.commit()

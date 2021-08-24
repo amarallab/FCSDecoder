@@ -37,7 +37,14 @@ final class FCSDecoderTests: XCTestCase {
         print("Read in \(elapsedTime) seconds")
         print("Channels: \(fcs.text.channels.count)")
         for (i, (valid, current)) in zip(finalValues, fcs.channelDataRanges).enumerated() {
-            print("Channel \(i): \(valid) ==? \(current)")
+            switch current {
+            case let .int(min: min, max: max):
+                if (valid.0 != min) || (valid.1 != max) {
+                    print("ERROR Channel \(i): \(valid) ==? \(current)")
+                }
+            default:
+                break
+            }
         }
     }
     
