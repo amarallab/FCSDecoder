@@ -3,12 +3,28 @@ import XCTest
 
 final class FCSDecoderBatteryFilesTests: XCTestCase {
     
+    var device: MTLDevice!
+    
+    public enum TestError: Error {
+        case deviceNotFound
+    }
+    
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        guard
+            let device = MTLCreateSystemDefaultDevice()
+        else {
+            throw TestError.deviceNotFound
+        }
+        self.device = device
+    }
+    
     private func test(resource: String) throws {
         print("Reading \"\(resource)\"...")
         let beginData = Date()
         let url = try XCTUnwrap(Bundle.module.url(forResource: resource, withExtension: "fcs"))
         let data = try Data(contentsOf: url)
-        let _ = try FlowCytometry(from: data)
+        let _ = try FlowCytometry(from: data, using: device)
         let elapsedTime = Date().timeIntervalSince(beginData)
         print("\tRead in \(elapsedTime) seconds")
     }

@@ -28,7 +28,6 @@ extension MTLComputeCommandEncoder {
 public struct FlowCytometry {
     public enum ReadingError: Error {
         // Metal issues
-        case deviceNotFound
         case bufferError
         case sourceDataError
         case functionError
@@ -63,14 +62,7 @@ public struct FlowCytometry {
     public let channelDataRanges: [DataRange]
     public let dataBuffer: MTLBuffer
     
-    public init(from data: Data) throws {
-        // First, initialize Metal
-        guard
-            let device = MTLCreateSystemDefaultDevice()
-        else {
-            throw ReadingError.deviceNotFound
-        }
-
+    public init(from data: Data, using device: MTLDevice) throws {
         let library = try device.makeDefaultLibrary(bundle: .module)
 
         // 1. HEADER
