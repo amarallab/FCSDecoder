@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct ExcitationWaveLengths: Decodable {
+public struct ExcitationWaveLengths: Decodable, Equatable, Hashable {
     private var values: [Int]
     public var count: Int { values.count }
     

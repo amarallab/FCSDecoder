@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Date: Decodable {
+public struct Date: Decodable, Equatable, Hashable {
     public var day: Int
     public var month: String
     public var year: Int

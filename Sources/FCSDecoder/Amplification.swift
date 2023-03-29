@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Amplification: Decodable {
+public struct Amplification: Decodable, Equatable, Hashable {
     public var param1: Float
     public var param2: Float
     

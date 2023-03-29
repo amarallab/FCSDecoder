@@ -7,22 +7,22 @@
 
 import Foundation
 
-public struct Channel: Decodable {
-    public var b: Int
-    public var e: Amplification
-    public var n: String
-    public var r: Double // TODO: depends on the datatype
+struct InternalChannel: Decodable, Equatable, Hashable {
+    var b: Int
+    var e: Amplification
+    var n: String
+    var r: Double // TODO: depends on the datatype
     
-    public var calibration: String?
-    public var d: SuggestedVisualization?
-    public var f: String?
-    public var g: Float?
-    public var l: ExcitationWaveLengths?
-    public var o: Int?
-    public var p: Int?
-    public var s: String?
-    public var t: String?
-    public var v: Float?
+    var calibration: String?
+    var d: SuggestedVisualization?
+    var f: String?
+    var g: Float?
+    var l: ExcitationWaveLengths?
+    var o: Int?
+    var p: Int?
+    var s: String?
+    var t: String?
+    var v: Float?
     
     enum CodingKeys: String, CodingKey {
         case b = "B",
@@ -42,13 +42,13 @@ public struct Channel: Decodable {
     }
 }
 
-extension Channel: Parametrized {
-    public static var paramCountKey: String? = "$PAR"
-    public static var paramPrefixes: [String] = ["$P", "P"]
+extension InternalChannel: Parametrized {
+    static var paramCountKey: String? = "$PAR"
+    static var paramPrefixes: [String] = ["$P", "P"]
 }
 
-public struct Flag: Decodable {
-    public var value: Int
+struct Flag: Decodable, Equatable, Hashable {
+    var value: Int
     
     enum CodingKeys: String, CodingKey {
         case value = "FLAG"
@@ -56,29 +56,29 @@ public struct Flag: Decodable {
 }
 
 extension Flag: Parametrized {
-    public static var paramCountKey: String? = "$CSMODE"
-    public static var paramPrefixes: [String] = ["$CSV"]
+    static var paramCountKey: String? = "$CSMODE"
+    static var paramPrefixes: [String] = ["$CSV"]
 }
 
-public struct Gate: Decodable {
-    public var e: Amplification
-    public var f: String
-    public var n: String
-    public var p: Int
-    public var r: Int
-    public var s: String
-    public var t: String
-    public var v: Int
+struct Gate: Decodable, Equatable, Hashable {
+    var e: Amplification
+    var f: String
+    var n: String
+    var p: Int
+    var r: Int
+    var s: String
+    var t: String
+    var v: Int
 }
 
 extension Gate: Parametrized {
-    public static var paramCountKey: String? = "$GATE"
-    public static var paramPrefixes: [String] = ["$G"]
+    static var paramCountKey: String? = "$GATE"
+    static var paramPrefixes: [String] = ["$G"]
 }
 
-public struct Region: Decodable {
-    public var i: [String]
-    public var w: [Float]
+struct Region: Decodable, Equatable, Hashable {
+    var i: [String]
+    var w: [Float]
     
     enum CodingKeys: String, CodingKey {
         case i = "I"
@@ -87,53 +87,53 @@ public struct Region: Decodable {
 }
 
 extension Region: Parametrized {
-    public static var paramCountKey: String? = nil
-    public static var paramPrefixes: [String] = ["$R"]
+    static var paramCountKey: String? = nil
+    static var paramPrefixes: [String] = ["$R"]
 }
 
-public struct TextSegment: Decodable {
-    public var beginAnalysis: Int
-    public var endAnalysis: Int
-    public var beginData: Int
-    public var endData: Int
-    public var beginSText: Int
-    public var endSText: Int
-    public var byteOrd: ByteOrder
-    public var dataType: DataType
-    public var mode: Mode
-    public var nextData: Int
-    public var tot: Int
+struct TextSegment: Decodable, Hashable, Equatable {
+    var beginAnalysis: Int
+    var endAnalysis: Int
+    var beginData: Int
+    var endData: Int
+    var beginSText: Int
+    var endSText: Int
+    var byteOrd: ByteOrder
+    var dataType: DataType
+    var mode: Mode
+    var nextData: Int
+    var tot: Int
     
-    public var channels: [Channel]
+    var channels: [InternalChannel]
     
-    public var abrt: Int?
-    public var bTim: FCSDecoder.Time?
-    public var cells: String?
-    public var com: String?
-    public var csMode: Int?
-    public var csvBits: Int?
-    public var csvFlags: [Flag]?
-    public var cyt: String?
-    public var cytSN: String?
-    public var date: FCSDecoder.Date?
-    public var etim: FCSDecoder.Time?
-    public var exp: String?
-    public var fil: String?
+    var abrt: Int?
+    var bTim: FCSDecoder.Time?
+    var cells: String?
+    var com: String?
+    var csMode: Int?
+    var csvBits: Int?
+    var csvFlags: [Flag]?
+    var cyt: String?
+    var cytSN: String?
+    var date: FCSDecoder.Date?
+    var etim: FCSDecoder.Time?
+    var exp: String?
+    var fil: String?
 
-    public var gates: [Gate]?
-    public var gating: String?
+    var gates: [Gate]?
+    var gating: String?
     
-    public var inst: String?
-    public var lastModified: FCSDecoder.FullDate?
-    public var lastModifier: String?
-    public var lost: Int?
-    public var op: String?
-    public var originality: Originality?
-    public var plateId: String?
-    public var plateName: String?
-    public var proj: String?
-    public var regions: [Region]?
-    public var smno: String?
+    var inst: String?
+    var lastModified: FCSDecoder.FullDate?
+    var lastModifier: String?
+    var lost: Int?
+    var op: String?
+    var originality: Originality?
+    var plateId: String?
+    var plateName: String?
+    var proj: String?
+    var regions: [Region]?
+    var smno: String?
     
     enum CodingKeys: String, CodingKey {
         case beginAnalysis = "$BEGINANALYSIS",

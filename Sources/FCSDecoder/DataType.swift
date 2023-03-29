@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum DataType: String, Decodable {
+enum DataType: String, Decodable, Equatable, Hashable {
     case ascii = "A"
     case int = "I"
     case float = "F"

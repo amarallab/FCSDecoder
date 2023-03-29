@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum SuggestedVisualization: Decodable {
+public enum SuggestedVisualization: Decodable, Equatable, Hashable {
     case linear(lowerBound: Float, upperBound: Float)
     case logarithmic(decades: Float, offset: Float)
     

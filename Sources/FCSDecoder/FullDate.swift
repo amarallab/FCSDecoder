@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct FullDate: Decodable {
+public struct FullDate: Decodable, Equatable, Hashable {
     public var date: FCSDecoder.Date
     public var time: FCSDecoder.Time
     

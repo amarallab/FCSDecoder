@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum Mode: String, Decodable {
+public enum Mode: String, Decodable, Equatable, Hashable {
     case list = "L"
     case correlated = "C"
     case uncorrelated = "U"

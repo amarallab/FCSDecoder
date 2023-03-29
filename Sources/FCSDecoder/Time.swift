@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Time: Decodable {
+public struct Time: Decodable, Equatable, Hashable {
     public var hour: Int
     public var minute: Int
     public var second: Int
