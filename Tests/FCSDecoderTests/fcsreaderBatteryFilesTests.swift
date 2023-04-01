@@ -24,7 +24,7 @@ final class FCSDecoderBatteryFilesTests: XCTestCase {
         let beginData = Date()
         let url = try XCTUnwrap(Bundle.module.url(forResource: resource, withExtension: "fcs"))
         let data = try Data(contentsOf: url)
-        let _ = try InternalFlowCytometry(from: data, using: device)
+        let _ = try FlowCytometry(from: data, using: device)
         let elapsedTime = Date().timeIntervalSince(beginData)
         print("\tRead in \(elapsedTime) seconds")
     }

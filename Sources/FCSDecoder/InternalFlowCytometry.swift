@@ -62,9 +62,7 @@ struct InternalFlowCytometry {
     let channelDataRanges: [DataRange]
     let dataBuffer: MTLBuffer
     
-    init(from data: Data, using device: MTLDevice) throws {
-        let library = try device.makeDefaultLibrary(bundle: .module)
-
+    init(from data: Data, using device: MTLDevice, library: MTLLibrary) throws {
         // 1. HEADER
         guard
             let versionString = String(bytes: data[0...5], encoding: .ascii)

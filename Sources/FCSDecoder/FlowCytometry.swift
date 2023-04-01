@@ -53,7 +53,8 @@ public struct FlowCytometry {
     public let dataBuffer: MTLBuffer
     
     public init(from data: Data, using device: MTLDevice) throws {
-        let read = try InternalFlowCytometry(from: data, using: device)
+        let library = try device.makeDefaultLibrary(bundle: .module)
+        let read = try InternalFlowCytometry(from: data, using: device, library: library)
         switch read.version {
         case .fcs30: self.version = .fcs30
         case .fcs31: self.version = .fcs31
@@ -97,9 +98,7 @@ public struct FlowCytometry {
     }
 }
 
-
 extension FlowCytometry: Hashable, Equatable {
-
     public func hash(into hasher: inout Hasher) {
         hasher.combine(version)
         hasher.combine(data)
