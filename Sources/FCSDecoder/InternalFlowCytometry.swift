@@ -486,7 +486,6 @@ struct InternalFlowCytometry {
         commandEncoder.setBuffer(maxsBuffer, offset: 0, index: 3)
         commandEncoder.setBuffer(minMaxValuesBuffer, offset: 0, index: 4)
 
-        let gridSingleSize = MTLSize(width: 1, height: 1, depth: 1)
         for _ in 0..<channelCount {
             commandEncoder.setComputePipelineState(pipelineInitChannelState)
             commandEncoder.dispatch(numberOfThreads: 1, pipelineState: pipelineInitChannelState)
