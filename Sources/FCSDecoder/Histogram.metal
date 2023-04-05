@@ -16,11 +16,11 @@ typedef struct {
     uint max_value;
 } channel_info_uniforms_t;
 
-kernel void intAssignBin(device const uint *data [[ buffer(0) ]],
-                         device const main_uniforms_t &main [[ buffer(1) ]],
-                         device const channel_info_uniforms_t *channel_infos [[ buffer(2) ]],
-                         device int *assigned_bin_buffer [[ buffer(3) ]],
-                         uint2 gid [[ thread_position_in_grid ]])
+kernel void intHistogramAssignBin(device const uint *data [[ buffer(0) ]],
+                                  device const main_uniforms_t &main [[ buffer(1) ]],
+                                  device const channel_info_uniforms_t *channel_infos [[ buffer(2) ]],
+                                  device int *assigned_bin_buffer [[ buffer(3) ]],
+                                  uint2 gid [[ thread_position_in_grid ]])
 {
     const auto channel_index = gid.x;
     const auto buffer_index = gid.y * main.channel_count + channel_index;
@@ -35,11 +35,11 @@ kernel void intAssignBin(device const uint *data [[ buffer(0) ]],
     }
 }
 
-kernel void floatAssignBin(device const float *data [[ buffer(0) ]],
-                           device const main_uniforms_t &main [[ buffer(1) ]],
-                           device const channel_info_uniforms_t *channel_infos [[ buffer(2) ]],
-                           device int *assigned_bin_buffer [[ buffer(3) ]],
-                           uint2 gid [[ thread_position_in_grid ]])
+kernel void floatHistogramAssignBin(device const float *data [[ buffer(0) ]],
+                                    device const main_uniforms_t &main [[ buffer(1) ]],
+                                    device const channel_info_uniforms_t *channel_infos [[ buffer(2) ]],
+                                    device int *assigned_bin_buffer [[ buffer(3) ]],
+                                    uint2 gid [[ thread_position_in_grid ]])
 {
     const auto channel_index = gid.x;
     const auto buffer_index = gid.y * main.channel_count + channel_index;

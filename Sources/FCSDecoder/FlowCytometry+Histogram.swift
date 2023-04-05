@@ -53,9 +53,9 @@ extension FlowCytometry {
         let functionName: String
         switch data {
         case .int:
-            functionName = "intAssignBin"
+            functionName = "intHistogramAssignBin"
         case .float:
-            functionName = "floatAssignBin"
+            functionName = "floatHistogramAssignBin"
         }
 
         let library = try device.makeDefaultLibrary(bundle: .module)

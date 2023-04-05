@@ -13,6 +13,21 @@ public enum ChannelDataRange: Equatable, Hashable {
     case float(min: Float32, max: Float32)
 }
 
+extension ChannelDataRange {
+    public static func union(_ a: Self, _ b: Self) -> Self {
+        switch (a, b) {
+        case (.int(min: let amin, max: let amax), .int(min: let bmin, max: let bmax)):
+            return .int(min: min(amin, bmin), max: max(amax, bmax))
+        case (.float(min: let amin, max: let amax), .float(min: let bmin, max: let bmax)):
+            return .float(min: min(amin, bmin), max: max(amax, bmax))
+        case (.int(min: let amin, max: let amax), .float(min: let bmin, max: let bmax)):
+            return .float(min: min(Float(amin), bmin), max: max(Float(amax), bmax))
+        case (.float(min: let amin, max: let amax), .int(min: let bmin, max: let bmax)):
+            return .float(min: min(amin, Float(bmin)), max: max(amax, Float(bmax)))
+        }
+    }
+}
+
 public struct Channel: Equatable, Hashable {
     public let dataRange: ChannelDataRange
     public let offset: Int
