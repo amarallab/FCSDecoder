@@ -66,7 +66,7 @@ final class FCSDecoderHistogramTests: XCTestCase {
                 for i in 0..<binsCount {
                     histValues.append(ptr2[Int(data.offset) + i])
                 }
-                print("Calculated: \(bins), hist: \(histValues), count: \(data.validEventCount), offset: \(data.offset) \(data.step), \(step), \(data.maxValue), \(binMaxValue)")
+                print("Calculated: \(bins), hist: \(histValues), offset: \(data.offset) \(data.step), \(step), \(data.maxValue), \(binMaxValue)")
             }
         }
         let ptr2 = histo.dataBuffer.contents().bindMemory(to: UInt32.self, capacity: binsCount)

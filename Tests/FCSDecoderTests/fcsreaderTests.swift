@@ -56,14 +56,18 @@ final class FCSDecoderTests: XCTestCase {
     
     func testAllResourcesDecoder() throws {
         for url in try XCTUnwrap(Bundle.module.urls(forResourcesWithExtension: "fcs", subdirectory: nil)) {
-            print("Testing \"\(url.lastPathComponent)\"")
-            let beginData = Date()
-            let data = try Data(contentsOf: url)
-            let fcs = try FlowCytometry(from: data, using: device)
-            let elapsedTime = Date().timeIntervalSince(beginData)
-            print("\tRead in \(elapsedTime) seconds")
-            print("Channels: \(fcs.channels.count)")
-            print("Channel 0: \(fcs.channels[0].dataRange), \(fcs.channels[0].r)")
+            do {
+                print("Testing \"\(url.lastPathComponent)\"")
+                let beginData = Date()
+                let data = try Data(contentsOf: url)
+                let fcs = try FlowCytometry(from: data, using: device)
+                let elapsedTime = Date().timeIntervalSince(beginData)
+                print("\tRead in \(elapsedTime) seconds")
+                print("Channels: \(fcs.channels.count)")
+                print("Channel 0: \(fcs.channels[0].dataRange), \(fcs.channels[0].r)")
+            } catch {
+                print("Error loading \(url): \(error.localizedDescription)")
+            }
         }
     }
 

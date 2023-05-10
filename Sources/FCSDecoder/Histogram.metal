@@ -29,7 +29,7 @@ kernel void intHistogramAssignBin(device const uint *data [[ buffer(0) ]],
     if (channel_info.use_ln && in_value < 1) {
         assigned_bin_buffer[buffer_index] = -1;
     } else {
-        float value = channel_info.use_ln ? log(float(in_value)) : float(in_value);
+        float value = channel_info.use_ln ? log10(float(in_value)) : float(in_value);
         uint bin = channel_info.step != 0.0 ? uint((value - channel_info.min) / channel_info.step) : 0;
         assigned_bin_buffer[buffer_index] = max(uint(0), min(bin, channel_info.bins_count - 1));
     }
@@ -48,7 +48,7 @@ kernel void floatHistogramAssignBin(device const float *data [[ buffer(0) ]],
     if (channel_info.use_ln && in_value < 1) {
         assigned_bin_buffer[buffer_index] = -1;
     } else {
-        float value = channel_info.use_ln ? log(in_value) : in_value;
+        float value = channel_info.use_ln ? log10(in_value) : in_value;
         uint bin = channel_info.step != 0.0 ? uint((value - channel_info.min) / channel_info.step) : 0;
         assigned_bin_buffer[buffer_index] = max(uint(0), min(bin, channel_info.bins_count - 1));
     }

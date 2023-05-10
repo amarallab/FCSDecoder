@@ -435,7 +435,7 @@ struct InternalFlowCytometry {
         }
         return result
     }
-
+    
     static func findMinMaxFloat(device: MTLDevice, library: MTLLibrary, buffer: MTLBuffer, channelCount: Int, eventCount: Int) throws -> [DataRange] {
         struct FindMinMaxUniforms {
             var diff: UInt32

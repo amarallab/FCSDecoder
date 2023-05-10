@@ -73,11 +73,11 @@ extension FlowCytometry {
         let xMaxValue: Float32
         switch xRange {
         case .int(min: let min, max: let max):
-            xMinValue = useLn ? log(Swift.max(1.0, Float32(min))) : Float32(min)
-            xMaxValue = useLn ? log(Swift.max(1.0, Float32(max))) : Float32(max)
+            xMinValue = useLn ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
+            xMaxValue = useLn ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
         case .float(min: let min, max: let max):
-            xMinValue = useLn ? log(Swift.max(1.0, Float32(min))) : Float32(min)
-            xMaxValue = useLn ? log(Swift.max(1.0, Float32(max))) : Float32(max)
+            xMinValue = useLn ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
+            xMaxValue = useLn ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
         }
         let xStep = (xMaxValue - xMinValue) / Float32(xBinsCount)
         
@@ -85,11 +85,11 @@ extension FlowCytometry {
         let yMaxValue: Float32
         switch yRange {
         case .int(min: let min, max: let max):
-            yMinValue = useLn ? log(Swift.max(1.0, Float32(min))) : Float32(min)
-            yMaxValue = useLn ? log(Swift.max(1.0, Float32(max))) : Float32(max)
+            yMinValue = useLn ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
+            yMaxValue = useLn ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
         case .float(min: let min, max: let max):
-            yMinValue = useLn ? log(Swift.max(1.0, Float32(min))) : Float32(min)
-            yMaxValue = useLn ? log(Swift.max(1.0, Float32(max))) : Float32(max)
+            yMinValue = useLn ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
+            yMaxValue = useLn ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
         }
         let yStep = (yMaxValue - yMinValue) / Float32(yBinsCount)
         
@@ -107,9 +107,6 @@ extension FlowCytometry {
             useLn: useLn
         )
         let mainUniformsLength = MemoryLayout<MainUniforms>.stride
-        
-        print("xOffset: \(xChannel.offset), stride: \(xChannel.stride)")
-        print("yOffset: \(yChannel.offset), stride: \(yChannel.stride)")
         
         guard
             let commandQueue = device.makeCommandQueue(),
@@ -149,7 +146,6 @@ extension FlowCytometry {
             }
         }
 
-        print("BinData: \(binData)")
         guard
             let heatMapBuffer = device.makeBuffer(bytes: binData, length: xBinsCount * yBinsCount * MemoryLayout<UInt32>.size, options: .storageModeShared)
         else {

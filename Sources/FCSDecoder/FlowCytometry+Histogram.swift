@@ -14,21 +14,32 @@ extension Comparable {
     }
 }
 
-public struct HistogramChannel: Equatable, Hashable, Identifiable {
+public struct HistogramChannel: Codable, Equatable, Hashable, Identifiable {
     public let binsCount: UInt32
     public let step: Float32
     public let usedLn: Bool
-    public let validEventCount: Int
     public let maxValue: Int
     public let offset: UInt32
     
     public var id: Self { self }
+    
+    public init(binsCount: UInt32, step: Float32, usedLn: Bool, maxValue: Int, offset: UInt32) {
+        self.binsCount = binsCount
+        self.step = step
+        self.usedLn = usedLn
+        self.maxValue = maxValue
+        self.offset = offset
+    }
 }
 
 public struct HistogramData {
     public let dataBuffer: MTLBuffer
-    public let totalMaxValue: Int
-    public let histogram: [Channel: HistogramChannel]
+    public let histogram: [String: HistogramChannel]
+    
+    public init(dataBuffer: MTLBuffer, histogram: [String: HistogramChannel]) {
+        self.dataBuffer = dataBuffer
+        self.histogram = histogram
+    }
 }
 
 extension HistogramData: Hashable, Equatable {
@@ -93,16 +104,16 @@ extension FlowCytometry {
             switch channel.dataRange {
             case .int(min: let min, max: let max):
                 if useLn {
-                    minValue = log(Swift.max(1.0, Float32(min)))
-                    maxValue = log(Swift.max(1.0, Float32(max)))
+                    minValue = 0 //log10(Swift.max(1.0, Float32(min)))
+                    maxValue = log10(Swift.max(1.0, Float32(max)))
                 } else {
                     minValue = Float32(min)
                     maxValue = Float32(max)
                 }
             case .float(min: let min, max: let max):
                 if useLn {
-                    minValue = log(Swift.max(1.0, Float32(min)))
-                    maxValue = log(Swift.max(1.0, Float32(max)))
+                    minValue = 0 //log10(Swift.max(1.0, Float32(min)))
+                    maxValue = log10(Swift.max(1.0, Float32(max)))
                 } else {
                     minValue = Float32(min)
                     maxValue = Float32(max)
@@ -176,19 +187,17 @@ extension FlowCytometry {
         let finalChannelInfoPointer = channelInfoUniformsBuffer.contents().bindMemory(to: ChannelInfoUniforms.self, capacity: channels.count)
         let result = UnsafeBufferPointer(start: finalChannelInfoPointer, count: channels.count).map { $0 }
 
-        var histogram: [Channel: HistogramChannel] = [:]
+        var histogram: [String: HistogramChannel] = [:]
         for (channel, current) in zip(channels, result) {
-            histogram[channel] = HistogramChannel(
+            histogram[channel.n.uppercased()] = HistogramChannel(
                 binsCount: current.binsCount,
                 step: current.step,
                 usedLn: current.useLn,
-                validEventCount: Int(current.validEventCount),
                 maxValue: Int(current.maxValue),
                 offset: current.offset)
         }
         return HistogramData(
             dataBuffer: histogramBuffer,
-            totalMaxValue: Int(result.map { $0.maxValue }.max() ?? 0),
             histogram: histogram)
     }
 }

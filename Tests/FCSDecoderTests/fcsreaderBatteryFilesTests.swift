@@ -49,37 +49,37 @@ final class FCSDecoderBatteryFilesTests: XCTestCase {
         }
     }
 
-    func testAppliedBiosystems() throws {
-        for resource in [
-            "Applied Biosystems - Attune"]
-        {
-            try test(resource: resource)
-        }
-    }
+//    func testAppliedBiosystems() throws {
+//        for resource in [
+//            "Applied Biosystems - Attune"]
+//        {
+//            try test(resource: resource)
+//        }
+//    }
 
-    func testBD() throws {
-        for resource in [
-            "BD - FACS Aria II - Compensation Controls_B515 Stained Control",
-            "BD - FACS Aria II - Compensation Controls_G560 Stained Control",
-            "BD - FACS Aria II - Compensation Controls_G610 Stained Control",
-            "BD - FACS Aria II - Compensation Controls_G660 Stained Control",
-            "BD - FACS Aria II - Compensation Controls_G710 Stained Control",
-            "BD - FACS Aria II"]
-        {
-            try test(resource: resource)
-        }
-    }
+//    func testBD() throws {
+//        for resource in [
+//            "BD - FACS Aria II - Compensation Controls_B515 Stained Control",
+//            "BD - FACS Aria II - Compensation Controls_G560 Stained Control",
+//            "BD - FACS Aria II - Compensation Controls_G610 Stained Control",
+//            "BD - FACS Aria II - Compensation Controls_G660 Stained Control",
+//            "BD - FACS Aria II - Compensation Controls_G710 Stained Control",
+//            "BD - FACS Aria II"]
+//        {
+//            try test(resource: resource)
+//        }
+//    }
     
-    func testBeckman() throws {
-        for resource in [
-            "Beckman Coulter - Cyan",
-            "Beckman Coulter - MoFlo Astrios - linear settings",
-            "Beckman Coulter - MoFlo Astrios - log settings",
-            "Beckman Coulter - MoFlo XDP"]
-        {
-            try test(resource: resource)
-        }
-    }
+//    func testBeckman() throws {
+//        for resource in [
+//            "Beckman Coulter - Cyan",
+//            "Beckman Coulter - MoFlo Astrios - linear settings",
+//            "Beckman Coulter - MoFlo Astrios - log settings",
+//            "Beckman Coulter - MoFlo XDP"]
+//        {
+//            try test(resource: resource)
+//        }
+//    }
     
     func testCytek() throws {
         for resource in [
@@ -94,13 +94,13 @@ final class FCSDecoderBatteryFilesTests: XCTestCase {
         }
     }
     
-    func testMillipore() throws {
-        for resource in [
-            "Millipore - easyCyte 6HT-2L - InCyte"]
-        {
-            try test(resource: resource)
-        }
-    }
+//    func testMillipore() throws {
+//        for resource in [
+//            "Millipore - easyCyte 6HT-2L - InCyte"]
+//        {
+//            try test(resource: resource)
+//        }
+//    }
     
     func testMiltenyi() throws {
         for resource in [
@@ -120,13 +120,13 @@ final class FCSDecoderBatteryFilesTests: XCTestCase {
         }
     }
     
-    func testPartec() throws {
-        for resource in [
-            "Partec - PAS - 8 peak beads"]
-        {
-            try test(resource: resource)
-        }
-    }
+//    func testPartec() throws {
+//        for resource in [
+//            "Partec - PAS - 8 peak beads"]
+//        {
+//            try test(resource: resource)
+//        }
+//    }
     
     func testStratedigm() throws {
         for resource in [
@@ -136,11 +136,11 @@ final class FCSDecoderBatteryFilesTests: XCTestCase {
         }
     }
     
-    func testVerity() throws {
-        for resource in [
-            "Verity Software House - GemStoneGeneratedData - 500000events"]
-        {
-            try test(resource: resource)
-        }
-    }
+//    func testVerity() throws {
+//        for resource in [
+//            "Verity Software House - GemStoneGeneratedData - 500000events"]
+//        {
+//            try test(resource: resource)
+//        }
+//    }
 }

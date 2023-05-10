@@ -31,7 +31,7 @@ kernel void intHeatMapAssignBin(device const uint *data [[ buffer(0) ]],
     if (main.use_ln && in_value < 1) {
         assigned_bin_buffer[out_index] = -1;
     } else {
-        float value = main.use_ln ? log(in_value) : in_value;
+        float value = main.use_ln ? log10(in_value) : in_value;
         uint bin = step != 0.0 ? uint((value - _min) / step) : 0;
         assigned_bin_buffer[out_index] = max(uint(0), min(bin, bins_count - 1));
     }
@@ -53,7 +53,7 @@ kernel void floatHeatMapAssignBin(device const float *data [[ buffer(0) ]],
     if (main.use_ln && in_value < 1) {
         assigned_bin_buffer[out_index] = -1;
     } else {
-        float value = main.use_ln ? log(in_value) : in_value;
+        float value = main.use_ln ? log10(in_value) : in_value;
         uint bin = step != 0.0 ? uint((value - _min) / step) : 0;
         assigned_bin_buffer[out_index] = max(uint(0), min(bin, bins_count - 1));
     }
