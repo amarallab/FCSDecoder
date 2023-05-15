@@ -130,3 +130,36 @@ extension FlowCytometry: Hashable, Equatable {
             // no dataBuffer
     }
 }
+
+public protocol BodySubscription {
+    subscript(_ index: Int) -> Float { get }
+}
+
+public struct FloatBodySubscription: BodySubscription {
+    var buffer: UnsafeMutablePointer<Float>
+    public subscript(_ index: Int) -> Float {
+        buffer[index]
+    }
+}
+
+public struct IntBodySubscription: BodySubscription {
+    var buffer: UnsafeMutablePointer<Int32>
+    public subscript(_ index: Int) -> Float {
+        Float(buffer[index])
+    }
+}
+
+extension MTLBuffer {
+    public func withMemoryRebound<Result>(using data: FlowCytometry.DataType, capacity: Int, body: (BodySubscription) throws -> Result) rethrows -> Result {
+        switch data {
+        case .float:
+            return try self.contents().withMemoryRebound(to: Float.self, capacity: capacity) { dataBufferPtr in
+                try body(FloatBodySubscription(buffer: dataBufferPtr))
+            }
+        case .int:
+            return try self.contents().withMemoryRebound(to: Int32.self, capacity: capacity) { dataBufferPtr in
+                try body(IntBodySubscription(buffer: dataBufferPtr))
+            }
+        }
+    }
+}
