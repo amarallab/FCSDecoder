@@ -60,7 +60,7 @@ final class FCSDecoderHistogramTests: XCTestCase {
                 bins[bin] += 1
             }
             let binMaxValue = bins.max() ?? 0
-            if let data = histo.histogram[channel] {
+            if let data = histo.histogram[channel.n.uppercased()] {
                 let ptr2 = histo.dataBuffer.contents().bindMemory(to: UInt32.self, capacity: binsCount)
                 var histValues: [UInt32] = []
                 for i in 0..<binsCount {
