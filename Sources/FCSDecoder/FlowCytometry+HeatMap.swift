@@ -36,7 +36,7 @@ extension FlowCytometry {
         case commandError
     }
     
-    public func createHeatMap(device: MTLDevice, useLn: Bool = false, xChannel: Channel, yChannel: Channel, xRange: ChannelDataRange, yRange: ChannelDataRange, xBinsCount: Int, yBinsCount: Int) throws -> HeatMapData {
+    public func createHeatMap(device: MTLDevice, useLog10: Bool = false, xChannel: Channel, yChannel: Channel, xRange: ChannelDataRange, yRange: ChannelDataRange, xBinsCount: Int, yBinsCount: Int) throws -> HeatMapData {
         if xChannel.stride != yChannel.stride {
             throw HeatMapError.mustBeSameDataBuffer
         }
@@ -66,18 +66,18 @@ extension FlowCytometry {
             var xStep: Float32
             var yMin: Float32
             var yStep: Float32
-            var useLn: Bool
+            var useLog10: Bool
         }
         
         let xMinValue: Float32
         let xMaxValue: Float32
         switch xRange {
         case .int(min: let min, max: let max):
-            xMinValue = useLn ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
-            xMaxValue = useLn ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
+            xMinValue = useLog10 ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
+            xMaxValue = useLog10 ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
         case .float(min: let min, max: let max):
-            xMinValue = useLn ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
-            xMaxValue = useLn ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
+            xMinValue = useLog10 ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
+            xMaxValue = useLog10 ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
         }
         let xStep = (xMaxValue - xMinValue) / Float32(xBinsCount)
         
@@ -85,11 +85,11 @@ extension FlowCytometry {
         let yMaxValue: Float32
         switch yRange {
         case .int(min: let min, max: let max):
-            yMinValue = useLn ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
-            yMaxValue = useLn ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
+            yMinValue = useLog10 ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
+            yMaxValue = useLog10 ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
         case .float(min: let min, max: let max):
-            yMinValue = useLn ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
-            yMaxValue = useLn ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
+            yMinValue = useLog10 ? log10(Swift.max(1.0, Float32(min))) : Float32(min)
+            yMaxValue = useLog10 ? log10(Swift.max(1.0, Float32(max))) : Float32(max)
         }
         let yStep = (yMaxValue - yMinValue) / Float32(yBinsCount)
         
@@ -104,7 +104,7 @@ extension FlowCytometry {
             xStep: xStep,
             yMin: yMinValue,
             yStep: yStep,
-            useLn: useLn
+            useLog10: useLog10
         )
         let mainUniformsLength = MemoryLayout<MainUniforms>.stride
         

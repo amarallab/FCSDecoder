@@ -25,7 +25,7 @@ final class FCSDecoderHistogramTests: XCTestCase {
         let data = try Data(contentsOf: url)
         let fcs = try FlowCytometry(from: data, using: device)
         let elapsedTime = Date().timeIntervalSince(beginData)
-        _ = try fcs.createHistograms(device: device, useLn: true) { _ in 1024 }
+        _ = try fcs.createHistograms(device: device, useLog10: true) { _ in 1024 }
         let histogramElapsedTime = Date().timeIntervalSince(beginData)
         
         print("Read in \(elapsedTime) seconds")
@@ -41,7 +41,7 @@ final class FCSDecoderHistogramTests: XCTestCase {
         let fcs = try FlowCytometry(from: data, using: device)
         let elapsedTime = Date().timeIntervalSince(beginData)
         let binsCount = 10
-        let histo = try fcs.createHistograms(device: device, useLn: false) { _ in binsCount }
+        let histo = try fcs.createHistograms(device: device, useLog10: false) { _ in binsCount }
         let histogramElapsedTime = Date().timeIntervalSince(beginData)
 
         print("Event count: \(fcs.eventCount)")

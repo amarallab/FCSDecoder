@@ -16,6 +16,7 @@ extension Comparable {
 
 public struct HistogramChannel: Codable, Equatable, Hashable, Identifiable {
     public let binsCount: UInt32
+    public let eventCount: Int
     public let step: Float32
     public let usedLn: Bool
     public let maxValue: Int
@@ -23,8 +24,9 @@ public struct HistogramChannel: Codable, Equatable, Hashable, Identifiable {
     
     public var id: Self { self }
     
-    public init(binsCount: UInt32, step: Float32, usedLn: Bool, maxValue: Int, offset: UInt32) {
+    public init(binsCount: UInt32, eventCount: Int, step: Float32, usedLn: Bool, maxValue: Int, offset: UInt32) {
         self.binsCount = binsCount
+        self.eventCount = eventCount
         self.step = step
         self.usedLn = usedLn
         self.maxValue = maxValue
@@ -64,7 +66,7 @@ extension FlowCytometry {
 
     public typealias HistogramBinsCount = (ChannelDataRange) -> Int
     
-    public func createHistograms(device: MTLDevice, useLn: Bool = false, binsCount: HistogramBinsCount? = nil) throws -> HistogramData<String> {
+    public func createHistograms(device: MTLDevice, useLog10: Bool = false, binsCount: HistogramBinsCount? = nil) throws -> HistogramData<String> {
         let functionName: String
         switch data {
         case .int:
@@ -95,7 +97,7 @@ extension FlowCytometry {
             var step: Float32
             var offset: UInt32
             var binsCount: UInt32
-            var useLn: Bool
+            var useLog10: Bool
             var validEventCount: Int32 = 0
             var maxValue: UInt32 = 0
         }
@@ -107,7 +109,7 @@ extension FlowCytometry {
             let maxValue: Float32
             switch channel.dataRange {
             case .int(min: let min, max: let max):
-                if useLn {
+                if useLog10 {
                     minValue = 0 //log10(Swift.max(1.0, Float32(min)))
                     maxValue = log10(Swift.max(1.0, Float32(max)))
                 } else {
@@ -115,7 +117,7 @@ extension FlowCytometry {
                     maxValue = Float32(max)
                 }
             case .float(min: let min, max: let max):
-                if useLn {
+                if useLog10 {
                     minValue = 0 //log10(Swift.max(1.0, Float32(min)))
                     maxValue = log10(Swift.max(1.0, Float32(max)))
                 } else {
@@ -129,7 +131,7 @@ extension FlowCytometry {
                 step: step,
                 offset: offset,
                 binsCount: UInt32(binsCount),
-                useLn: useLn
+                useLog10: useLog10
             )
             channelInfoUniforms.append(channelInfo)
             offset += UInt32(binsCount)
@@ -195,8 +197,9 @@ extension FlowCytometry {
         for (channel, current) in zip(channels, result) {
             histogram[channel.n.uppercased()] = HistogramChannel(
                 binsCount: current.binsCount,
+                eventCount: eventCount,
                 step: current.step,
-                usedLn: current.useLn,
+                usedLn: current.useLog10,
                 maxValue: Int(current.maxValue),
                 offset: current.offset)
         }

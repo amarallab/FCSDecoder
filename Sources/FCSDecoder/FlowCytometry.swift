@@ -11,6 +11,19 @@ import MetalKit
 public enum ChannelDataRange: Equatable, Hashable {
     case int(min: UInt32, max: UInt32)
     case float(min: Float32, max: Float32)
+    
+    public var asLog10: Self {
+        switch self {
+        case .int(min: let min, max: let max):
+            let newMin: Float32 = min <= 0 ? 0 : log10(Float(min))
+            let newMax: Float32 = max <= 0 ? 1 : log10(Float(max))
+            return .float(min: newMin, max: newMax)
+        case .float(min: let min, max: let max):
+            let newMin = min <= 0.0 ? 0.0 : log10(min)
+            let newMax = max <= 0.0 ? 1.0 : log10(max)
+            return .float(min: newMin, max: newMax)
+        }
+    }
 }
 
 extension ChannelDataRange {

@@ -55,7 +55,7 @@ final class FCSDecoderHeatMapTests: XCTestCase {
         else {
             throw TestError.noChannels
         }
-        let heatMap = try fcs.createHeatMap(device: device, useLn: false, xChannel: channelX, yChannel: channelY, xRange: channelX.dataRange, yRange: channelY.dataRange, xBinsCount: 10, yBinsCount: 1)
+        let heatMap = try fcs.createHeatMap(device: device, useLog10: false, xChannel: channelX, yChannel: channelY, xRange: channelX.dataRange, yRange: channelY.dataRange, xBinsCount: 10, yBinsCount: 1)
         let heatMapElapsedTime = Date().timeIntervalSince(beginData)
         
         repeat {
@@ -68,7 +68,7 @@ final class FCSDecoderHeatMapTests: XCTestCase {
             print("HeatMap: \(values), sum: \(values.reduce(0, +))")
         } while false
         
-        let histo = try fcs.createHistograms(device: device, useLn: false) { _ in 10 }
+        let histo = try fcs.createHistograms(device: device, useLog10: false) { _ in 10 }
         for channel in fcs.channels {
             guard
                 let x = histo.histogram[channel]
