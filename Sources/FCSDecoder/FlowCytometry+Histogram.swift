@@ -34,15 +34,15 @@ public struct HistogramChannel: Codable, Equatable, Hashable, Identifiable {
     }
 }
 
-public struct HistogramData<T: Hashable> {
+public struct HistogramData {
     public let dataBuffer: MTLBuffer
-    public let histogram: [T: HistogramChannel]
+    public let histogram: [String: HistogramChannel]
     
     public var maxValue: Int? {
         histogram.values.map { $0.maxValue }.max()
     }
     
-    public init(dataBuffer: MTLBuffer, histogram: [T: HistogramChannel]) {
+    public init(dataBuffer: MTLBuffer, histogram: [String: HistogramChannel]) {
         self.dataBuffer = dataBuffer
         self.histogram = histogram
     }
@@ -66,7 +66,7 @@ extension FlowCytometry {
 
     public typealias HistogramBinsCount = (ChannelDataRange) -> Int
     
-    public func createHistograms(device: MTLDevice, useLog10: Bool = false, binsCount: HistogramBinsCount? = nil) throws -> HistogramData<String> {
+    public func createHistograms(device: MTLDevice, useLog10: Bool = false, binsCount: HistogramBinsCount? = nil) throws -> HistogramData {
         let functionName: String
         switch data {
         case .int:
