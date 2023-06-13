@@ -32,6 +32,19 @@ public struct HistogramChannel: Codable, Equatable, Hashable, Identifiable {
         self.maxValue = maxValue
         self.offset = offset
     }
+    
+    public func rangeY(using rangeX: ChannelDataRange) -> ChannelDataRange {
+        switch rangeX {
+        case .float(min: let min, max: let max):
+            let dWidth = (max - min) / Float(binsCount)
+            let maxValue = Float(maxValue) / (dWidth * Float(eventCount))
+            return .float(min: 0, max: maxValue)
+        case .int(min: let min, max: let max):
+            let dWidth = Float(max - min) / Float(binsCount)
+            let maxValue = UInt32(ceil(Float(maxValue) / (dWidth * Float(eventCount))))
+            return .int(min: 0, max: maxValue)
+        }
+    }
 }
 
 public struct HistogramData {
