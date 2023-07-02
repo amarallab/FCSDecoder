@@ -65,6 +65,7 @@ struct InternalFlowCytometry {
     init(from data: Data, using device: MTLDevice, library: MTLLibrary) throws {
         // 1. HEADER
         guard
+            data.count >= 9,
             let versionString = String(bytes: data[0...5], encoding: .ascii)
         else {
             throw ReadingError.invalidFormat
