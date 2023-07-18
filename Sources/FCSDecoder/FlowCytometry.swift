@@ -99,7 +99,6 @@ public struct FlowCytometry {
 
         var channels: [Channel] = []
         for (index, (dataRange, data)) in zip(read.channelDataRanges, read.text.channels).enumerated() {
-
             let newDataRange: ChannelDataRange
             switch dataRange {
             case .int(let min, let max): newDataRange = .int(min: min, max: max)

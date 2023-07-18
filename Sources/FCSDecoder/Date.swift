@@ -8,6 +8,7 @@
 import Foundation
 
 public struct Date: Decodable, Equatable, Hashable {
+    public var isValid: Bool
     public var day: Int
     public var month: String
     public var year: Int
@@ -15,6 +16,14 @@ public struct Date: Decodable, Equatable, Hashable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let value = try container.decode(String.self)
+
+        guard !value.isEmpty else {
+            isValid = false
+            day = 1
+            month = "JAN"
+            year = 1970
+            return
+        }
         
         let months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
         let params = value.split(separator: "-")
@@ -34,6 +43,7 @@ public struct Date: Decodable, Equatable, Hashable {
             else {
                 throw DecodingError.dataCorruptedError(in: container, debugDescription: "")
             }
+            self.isValid = true
             self.day = day
             self.month = String(params[1])
             self.year = year
@@ -45,6 +55,7 @@ public struct Date: Decodable, Equatable, Hashable {
             else {
                 throw DecodingError.dataCorruptedError(in: container, debugDescription: "")
             }
+            self.isValid = true
             self.day = day
             self.month = String(params[1])
             self.year = year
