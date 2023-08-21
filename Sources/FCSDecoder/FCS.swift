@@ -8,7 +8,6 @@
 import Accelerate
 import Foundation
 
-
 fileprivate extension Optional where Wrapped == Float {
     var removedNan: Self {
         switch self {
