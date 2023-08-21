@@ -167,7 +167,6 @@ struct InternalFlowCytometry {
         
         let decoder = SegmentDecoder()
         self.text = try decoder.decode(TextSegment.self, from: data[textStartIndex...textEndIndex])
-
         let dataStartIndex = indexValues[2] != 0 ? indexValues[2] : self.text.beginData
         var dataEndIndex = indexValues[3] != 0 ? indexValues[3] : self.text.endData
         

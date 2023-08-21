@@ -63,6 +63,17 @@ public struct Channel: Equatable, Hashable {
     public let v: Float?
 }
 
+fileprivate extension Optional where Wrapped == Float {
+    var removedNan: Self {
+        switch self {
+        case .none:
+            return .none
+        case .some(let value):
+            return value.isNormal ? .some(value) : .none
+        }
+    }
+}
+
 public struct FlowCytometry {
     public enum Version {
         case fcs30
@@ -116,7 +127,24 @@ public struct FlowCytometry {
                 stride = MemoryLayout<Float32>.size * 8 * read.text.channels.count
             }
 
-            let channel = Channel(dataRange: newDataRange, offset: offset, stride: stride, b: data.b, e: data.e, n: data.n, r: data.r, calibration: data.calibration, d: data.d, f: data.f, g: data.g, l: data.l, o: data.o, p: data.p, s: data.s, t: data.t, v: data.v)
+            let channel = Channel(
+                dataRange: newDataRange,
+                offset: offset,
+                stride: stride,
+                b: data.b,
+                e: data.e,
+                n: data.n,
+                r: data.r,
+                calibration: data.calibration,
+                d: data.d,
+                f: data.f,
+                g: data.g.removedNan,
+                l: data.l,
+                o: data.o,
+                p: data.p,
+                s: data.s,
+                t: data.t,
+                v: data.v.removedNan)
             channels.append(channel)
         }
         self.channels = channels

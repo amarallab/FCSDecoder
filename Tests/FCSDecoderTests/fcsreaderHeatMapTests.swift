@@ -71,7 +71,7 @@ final class FCSDecoderHeatMapTests: XCTestCase {
         let histo = try fcs.createHistograms(device: device, useLog10: false) { _ in 10 }
         for channel in fcs.channels {
             guard
-                let x = histo.histogram[channel]
+                let x = histo.histogram[channel.n.uppercased()]
             else {
                 throw TestError.noChannels
             }
