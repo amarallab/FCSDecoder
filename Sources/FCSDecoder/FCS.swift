@@ -51,6 +51,14 @@ public struct FCS {
         case int(min: UInt32, max: UInt32)
         case float(min: Float32, max: Float32)
         case double(min: Double, max: Double)
+        
+        public var asFloat: (min: Float, max: Float) {
+            switch self {
+            case .int(min: let min, max: let max): return (min: Float(min), max: Float(max))
+            case .float(min: let min, max: let max): return (min: min, max: max)
+            case .double(min: let min, max: let max): return (min: Float(min), max: Float(max))
+            }
+        }
     }
     
     public struct Channel: Equatable, Hashable {
